@@ -46,25 +46,22 @@
                         </div>
                         <div class="row">
                             <div class="mb-3 col-md-6">
-                                <label for="exampleFormControlInput1" class="form-label">Size</label>
+                                <label for="size_id" class="form-label">Size</label>
                                 <select class="form-select" name="size_id" id="size_id" aria-label="Default select example"
                                     required>
                                     <option value="">Select Size</option>
                                     @if(isset($sizeDropdown))
                                         @foreach ($sizeDropdown as $size)
-                                            <option value="{{$size->id}}">{{$size->size}}</option>
+                                            <option value="{{ $size->id }}">{{ $size->size }}</option>
                                         @endforeach
                                     @endif
                                 </select>
                             </div>
+
                             <div class="mb-3 col-md-6">
-                                <label for="Product Status" class="form-label">Product Status</label>
-                                <select class="form-select" name="status" id="status" aria-label="Default select example"
-                                    required>
-                                    <option value="">Select Product Status</option>
-                                    <option value="1">In-Stock</option>
-                                    <option value="0">Out-Stock</option>
-                                </select>
+                                <label for="stock_in" class="form-label">Stock In</label>
+                                <input type="number" name="stock_in" id="stock_in" class="form-control"
+                                    placeholder="Enter quantity in" min="0" required>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -94,9 +91,12 @@
                     <th>Category</th>
                     <th>Sub Category</th>
                     <th>Size</th>
-                    <th>Status</th>
+                    <th>Stock-In</th>
+                    <th>Stock-Out</th>
+                    <th>Remaining Stock</th>
                     <th>Edit</th>
                     <th>Delete</th>
+                    <th>Reduce-Stock</th>
                 </tr>
             </thead>
             <tbody>
@@ -109,19 +109,18 @@
                             <td>{{$products->category->category}}</td>
                             <td>{{$products->subcategory->sub_category}}</td>
                             <td>{{$products->size->size}}</td>
-                            <td>
-                                @if($products->status == 1)
-                                    <span class="badge bg-success">In-Stock</span>
-                                @else
-                                    <span class="badge bg-danger">Out-Stock</span>
-                                @endif
-                            </td>
+                            <td>{{ $products->stock_in }}</td>
+                            <td>{{ $products->stock_out }}</td>
+                            <td>{{ $products->remaining_stock }}</td>
 
                             <td><a href="javascript:void(0)" class="editproductbtn btn btn-secondary" data-bs-toggle="modal"
                                     data-bs-target="#producteditModal" data-id="{{ $products->id }}"><i
                                         class="fa-solid fa-pen-to-square"></i></a>
                             <td> <a href="javascript:void(0)" class="deleteproductbtn btn btn-primary"
                                     data-id="{{ $products->id }}"><i class="fa-solid fa-trash"></i></a></td>
+                            <td><a href="javascript:void(0)" class="reduceStock btn btn-dark" data-bs-toggle="modal"
+                                    data-bs-target="#stockreduceModal" data-id="{{ $products->id }}"><i
+                                        class="fa-solid fa-circle-minus"></i></a>
                         </tr>
                     @endforeach
                 @endif
@@ -134,9 +133,12 @@
                     <th>Category</th>
                     <th>Sub Category</th>
                     <th>Size</th>
-                    <th>Status</th>
+                    <th>Stock-In</th>
+                    <th>Stock-Out</th>
+                    <th>Remaining Stock</th>
                     <th>Edit</th>
                     <th>Delete</th>
+                    <th>Reduce-Stock</th>
                 </tr>
             </tfoot>
         </table>
@@ -192,15 +194,6 @@
                                     @endif
                                 </select>
                             </div>
-                            <div class="mb-3 col-md-6">
-                                <label for="Product Status" class="form-label">Product Status</label>
-                                <select class="form-select" name="edit_status" id="edit_status"
-                                    aria-label="Default select example" required>
-                                    <option value="">Select Product Status</option>
-                                    <option value="1">In-Stock</option>
-                                    <option value="0">Out-Stock</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="exampleFormControlInput1" class="form-label">Product Name</label>
@@ -212,6 +205,19 @@
                             <input type="text" name="edit_description" id="edit_description" class="form-control"
                                 placeholder="EG:Hex Nuts" required>
                         </div>
+                        <div class="row">
+                            <div class="mb-3 col-md-6">
+                                <label for="edit_stock_in" class="form-label">Stock In</label>
+                                <input type="number" name="edit_stock_in" id="edit_stock_in" class="form-control"
+                                    placeholder="Enter quantity in" min="0" required>
+                            </div>
+                            <div class="mb-3 col-md-6">
+                                <label for="edit_stock_out" class="form-label">Stock Out</label>
+                                <input type="number" name="edit_stock_out" id="edit_stock_out" class="form-control"
+                                    placeholder="Enter quantity out" min="0">
+                            </div>
+                        </div>
+
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                         <button type="button" class="btn btn-primary" id="updateproductbtn">Update</button>
                     </form>
@@ -219,6 +225,29 @@
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="stockreduceModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+        aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Reduce Stock</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="reduce_product_id">
+                    <label for="stock_out_qty" class="form-label">Quantity to Remove</label>
+                    <input type="number" id="stock_out_qty" class="form-control" min="1" required>
+                    <small id="remaining_stock_display">Available: </small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="reduceStockBtn">Reduce Stock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 @endsection
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
@@ -232,7 +261,7 @@
             const size_id = document.getElementById('size_id').value;
             const name = document.getElementById('name').value;
             const description = document.getElementById('description').value;
-            const status = document.getElementById('status').value;
+            const stock_in = document.getElementById('stock_in').value;
 
             fetch('/createproduct', {
                 method: 'POST',
@@ -246,7 +275,7 @@
                     size_id: size_id,
                     name: name,
                     description: description,
-                    status: status
+                    stock_in: stock_in
                 })
             })
                 .then(response => response.json())
@@ -296,7 +325,8 @@
                     $('#edit_category_id').val(data.category_id);
                     $('#edit_subcategory_id').val(data.subcategory_id);
                     $('#edit_name').val(data.name);
-                    $('#edit_status').val(data.status);
+                    $('#edit_stock_in').val(data.stock_in);
+                    $('#edit_stock_out').val(data.stock_out);
                     $('#edit_description').val(data.description);
                     $('#submitBtn').text('Update');
                 })
@@ -318,8 +348,10 @@
                     category_id: $('#edit_category_id').val(),
                     subcategory_id: $('#edit_subcategory_id').val(),
                     name: $('#edit_name').val(),
-                    status: $('#edit_status').val(),
+                    stock_in: $('#edit_stock_in').val(),
+                    stock_out: $('#edit_stock_out').val(),
                     description: $('#edit_description').val()
+
                 })
             })
                 .then(response => {
@@ -334,6 +366,67 @@
                 .catch(error => {
                     console.error('Update error:', error);
                     toastr.error('Failed to update product.');
+                });
+        });
+
+
+
+        $('#example').on('click', '.editproductbtn', function () {
+            const id = $(this).data('id');
+            fetch(`/product/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data)
+                    $('#product_id').val(data.id);
+                    $('#edit_size_id').val(data.size_id);
+                    $('#edit_category_id').val(data.category_id);
+                    $('#edit_subcategory_id').val(data.subcategory_id);
+                    $('#edit_name').val(data.name);
+                    $('#edit_status').val(data.status);
+                    $('#edit_description').val(data.description);
+                    $('#submitBtn').text('Update');
+                })
+                .catch(error => {
+                    console.error('Error fetching subcategory:', error);
+                    toastr.error('Failed to fetch subcategory data.');
+                });
+        });
+        $('#example').on('click', '.reduceStock', function () {
+            const id = $(this).data('id');
+            fetch(`/productdetails/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    $('#reduce_product_id').val(data.id);
+                    $('#stock_out_qty').attr('max', data.remaining_stock);
+                    $('#remaining_stock_display').text(`Available: ${data.remaining_stock}`);
+                    $('#stock_out_qty').val('');
+                });
+        });
+        $('#reduceStockBtn').on('click', function () {
+            const productId = $('#reduce_product_id').val();
+            const qty = parseInt($('#stock_out_qty').val());
+
+            fetch(`/stockout/${productId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ stock_out_qty: qty })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        toastr.success(data.message);
+                        $('#stockreduceModal').modal('hide');
+                        location.reload(); // Refresh list
+                    } else {
+                        toastr.error(data.error || 'Failed to reduce stock');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    toastr.error('Something went wrong');
                 });
         });
     });
