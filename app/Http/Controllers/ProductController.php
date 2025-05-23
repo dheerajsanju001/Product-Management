@@ -59,7 +59,7 @@ class ProductController extends Controller
         $categoryDropdown = Category::all();
         $subCategoryDropdown = SubCategory::all();
         $sizeDropdown = Size::all();
-        $product = ProductModel::with('category', 'subcategory', 'size')->get();
+        $product = ProductModel::with('category', 'subcategory', 'size')->orderBy('created_at', 'desc')->get();
         return view('product.listing', compact('categoryDropdown', 'subCategoryDropdown', 'sizeDropdown', 'product'));
     }
     public function createProduct(Request $request)
@@ -68,9 +68,10 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'subcategory_id' => $request->subcategory_id,
             'size_id' => $request->size_id,
-            'status' => $request->status,
             'name' => $request->name,
-            'description' => $request->description
+            'description' => $request->description,
+            'stock_in' => $request->stock_in ?? 0,
+            'stock_out' => $request->stock_out ?? 0
         ]);
         return response()->json(['success' => true, 'product' => $product]);
     }
@@ -93,15 +94,35 @@ class ProductController extends Controller
             'category_id' => $request->category_id,
             'subcategory_id' => $request->subcategory_id,
             'name' => $request->name,
-            'status' => $request->status,
             'description' => $request->description,
+            'stock_in' => $request->stock_in ?? 0,
+            'stock_out' => $request->stock_out ?? 0
         ]);
         return response()->json(['message' => 'Product updated successfully']);
     }
-    public function remainingStock()
+    public function showProductDetails($id)
     {
-        $product = ProductModel::where('status', 1)->with('category', 'subcategory', 'size')->get();
-        return view('product.remainigStock', compact('product'));
+        $product = ProductModel::findOrFail($id);
+        return response()->json([
+            'id' => $product->id,
+            'stock_in' => $product->stock_in,
+            'stock_out' => $product->stock_out,
+            'remaining_stock' => $product->remaining_stock
+        ]);
+    }
+    public function stockOut(Request $request, $id)
+    {
+        $product = ProductModel::findOrFail($id);
+        $stockOutQty = $request->stock_out_qty;
+
+        if ($stockOutQty > $product->remaining_stock) {
+            return response()->json(['error' => 'Not enough stock'], 400);
+        }
+
+        $product->stock_out += $stockOutQty;
+        $product->save();
+
+        return response()->json(['success' => true, 'message' => 'Stock reduced successfully']);
     }
 
 }

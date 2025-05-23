@@ -40,12 +40,12 @@
                         <span class="menu-text">Product</span>
                     </a>
                 </li>
-                <li class="main {{ request()->routeIs('remaining.stock') ? 'active' : '' }}">
+                {{-- <li class="main {{ request()->routeIs('remaining.stock') ? 'active' : '' }}">
                     <a href="{{ route('remaining.stock') }}">
                         <i data-feather="command" class="icon"></i>
                         <span class="menu-text">Remaining Stock</span>
                     </a>
-                </li>
+                </li> --}}
             </ul>
         </div>
 
